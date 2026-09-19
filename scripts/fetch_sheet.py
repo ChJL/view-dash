@@ -76,7 +76,7 @@ def encrypt_payload(password, payload):
 
 def fetch_holdings():
     creds_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
-    sheet_id = os.environ.get('SHEET_ID')
+    sheet_id = os.environ.get('VIEWDASH_SHEET_ID')
     sheet_range = os.environ.get('SHEET_RANGE', 'A1:Z1000')
 
     if not creds_json or not sheet_id:
@@ -132,7 +132,7 @@ def fetch_holdings():
 
 
 def main():
-    dashboard_password = os.environ.get('DASHBOARD_PASSWORD')
+    dashboard_password = os.environ.get('DASHBOARD_PASS')
     if not dashboard_password:
         print('Missing DASHBOARD_PASSWORD', file=sys.stderr)
         sys.exit(1)
