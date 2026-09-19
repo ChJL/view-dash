@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>持倉儀表板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12161C;
+    --panel: #1A2029;
+    --panel-2: #212936;
+    --line: #2B3542;
+    --text: #E8ECF1;
+    --text-muted: #8A94A6;
+    --up: #4FAE7C;
+    --down: #C75C4B;
+    --ibkr: #5B8DEF;
+    --first: #E0A458;
+    --track: #262F3B;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+    padding: 32px 20px 80px;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; }
+  h1,h2,h3{ font-family:'Space Grotesk', sans-serif; margin:0; }
+  a{ color: var(--ibkr); }
+  button{ font-family:'IBM Plex Sans', sans-serif; }
+
+  .btn{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:6px;
+    padding:9px 14px; font-size:13px; cursor:pointer; font-weight:500;
+  }
+  .btn:hover{ border-color:#3A4656; }
+  .btn.primary{ background:var(--up); color:#0E1712; border:none; font-weight:600; }
+  .btn.primary:hover{ filter:brightness(1.08); }
+  .link-btn{
+    background:none; border:none; color:var(--ibkr); font-size:12.5px; cursor:pointer; padding:0;
+    text-decoration:none; font-family:'IBM Plex Sans', sans-serif;
+  }
+  .link-btn:hover{ text-decoration:underline; }
+
+  /* ---------- LOGIN GATE ---------- */
+  .login-overlay{
+    position:fixed; inset:0; background:var(--bg); z-index:50;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:36px 28px; width:100%; max-width:340px; text-align:center;
+  }
+  .login-card h1{ font-size:19px; margin-bottom:6px; }
+  .login-card .login-sub{ color:var(--text-muted); font-size:12.5px; margin:0 0 22px; }
+  .login-card input{
+    width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:12px 14px; font-size:15px; margin-bottom:14px;
+    font-family:'IBM Plex Mono', monospace; text-align:center;
+  }
+  .login-card .btn{ width:100%; padding:12px 0; font-size:14px; }
+  .login-error{ color:var(--down); font-size:12.5px; margin-top:12px; min-height:16px; }
+
+  /* ---------- HEADER ---------- */
+  header.top{
+    display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end;
+    gap: 20px; padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 36px;
+  }
+  header.top h1{ font-size: 22px; font-weight:600; }
+  header.top .sub{ color:var(--text-muted); font-size:13px; margin-top:6px; }
+  .total-block{ text-align:right; }
+  .value-row{ display:flex; align-items:baseline; gap:10px; justify-content:flex-end; }
+  .total-block .value{ font-family:'IBM Plex Mono', monospace; font-size: 40px; font-weight:600; letter-spacing:-0.5px; }
+  .total-pl{ font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; }
+  .total-pl.pl-up{ color:var(--up); }
+  .total-pl.pl-down{ color:var(--down); }
+  .total-block .label{ color:var(--text-muted); font-size:13px; margin-top:2px; }
+  .split-row{ display:flex; gap:14px; margin-top:10px; justify-content:flex-end; font-size:12px; color:var(--text-muted); font-family:'IBM Plex Mono', monospace;}
+  .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+
+  section{ margin-bottom: 52px; }
+  section > .section-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px; gap:12px; flex-wrap:wrap; }
+  section h2{ font-size:17px; font-weight:600; }
+  section .section-note{ font-size:12.5px; color:var(--text-muted); }
+
+  /* ---------- CASH SUMMARY ---------- */
+  .cash-summary{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:14px 16px; margin-bottom:16px;
+  }
+  .cash-summary .cash-label{ font-size:13.5px; font-weight:600; }
+  .cash-summary .cash-figures{ display:flex; gap:18px; font-family:'IBM Plex Mono', monospace; font-size:13.5px; color:var(--text-muted); }
+  .cash-summary .cash-figures .cash-amount{ color:var(--text); font-weight:600; }
+  .cash-summary.acc-cash{ padding:10px 14px; margin-bottom:14px; }
+
+  /* ---------- TREEMAP ---------- */
+  .treemap{ position:relative; width:100%; border-radius:8px; overflow:hidden; background:var(--bg); }
+  .treemap-block{
+    position:absolute; box-sizing:border-box; border:1.5px solid var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    overflow:hidden; padding:2px; text-align:center;
+  }
+  .treemap-block .tm-label{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:13px; color:#F5F7FA; text-shadow:0 1px 3px rgba(0,0,0,.45); line-height:1.2; }
+  .treemap-block .tm-pct{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#F5F7FA; opacity:.9; text-shadow:0 1px 3px rgba(0,0,0,.45); margin-top:2px; }
+
+  /* ---------- ACCOUNT TABLES ---------- */
+  .account-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px){ .account-grid{ grid-template-columns: 1fr; } }
+  .account-card{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; }
+  .account-card h3{ font-size:14.5px; font-weight:600; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .account-card h3 .acc-total{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--text-muted); font-size:13px; }
+  table.acc-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  table.acc-table th{ text-align:left; color:var(--text-muted); font-weight:500; font-size:11.5px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  table.acc-table th.num, table.acc-table td.num{ text-align:right; }
+  table.acc-table td{ padding:7px 0; border-bottom:1px solid var(--line); font-family:'IBM Plex Mono', monospace; }
+  table.acc-table td.tk{ font-family:'IBM Plex Sans', sans-serif; font-weight:500; }
+  table.acc-table tr:last-child td{ border-bottom:none; }
+  .pl-up{ color:var(--up); }
+  .pl-down{ color:var(--down); }
+
+  .empty-state{ text-align:center; color:var(--text-muted); font-size:13.5px; padding:36px 0; }
+
+  /* ---------- MOBILE ---------- */
+  @media (max-width: 480px){
+    body{ padding: 22px 14px 64px; }
+    header.top{ flex-direction:column; align-items:flex-start; gap:14px; }
+    .total-block{ text-align:left; width:100%; }
+    .value-row{ justify-content:flex-start; }
+    .split-row{ justify-content:flex-start; }
+    .total-block .value{ font-size:30px; }
+    .total-pl{ font-size:14px; }
+    section{ margin-bottom:40px; }
+    .account-card{ padding:16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="loginOverlay">
+  <form class="login-card" id="loginForm">
+    <h1>持倉儀表板</h1>
+    <p class="login-sub">請輸入密碼以檢視內容</p>
+    <input type="password" id="pwInput" placeholder="密碼" autocomplete="current-password" required>
+    <button type="submit" class="btn primary">登入</button>
+    <div class="login-error" id="loginError"></div>
+  </form>
+</div>
+
+<div class="wrap" id="appRoot" style="display:none;">
+
+  <header class="top">
+    <div>
+      <h1>持倉儀表板</h1>
+      <div class="sub">最後更新：<span id="updatedLine">讀取中…</span> · <button class="link-btn" id="refreshBtn">重新整理</button></div>
+    </div>
+    <div class="total-block">
+      <div class="value-row">
+        <div class="value" id="totalValue">$0</div>
+        <div class="total-pl" id="totalPl"></div>
+      </div>
+      <div class="label">總資產（兩帳戶合計）</div>
+      <div class="split-row" id="splitRow"></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-head">
+      <h2>合併持倉：前十六大</h2>
+      <div class="section-note">依市值排序，矩形樹圖，不含現金部位</div>
+    </div>
+    <div id="cashSummary"></div>
+    <div id="combinedList"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>產業分類佔比</h2>
+      <div class="section-note">前七大產業分類，矩形樹圖，不含現金部位</div>
+    </div>
+    <div id="sectorList"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>各帳戶持倉：前十大</h2>
+      <div class="section-note">IBKR 與 FirstTrade 分開顯示，現金部位獨立列出，含未實現損益</div>
+    </div>
+    <div class="account-grid">
+      <div class="account-card">
+        <h3><span><span class="dot" style="background:var(--ibkr)"></span>IBKR</span><span class="acc-total" id="ibkrTotalLabel"></span></h3>
+        <div id="ibkrTable"></div>
+      </div>
+      <div class="account-card">
+        <h3><span><span class="dot" style="background:var(--first)"></span>FirstTrade</span><span class="acc-total" id="firstTotalLabel"></span></h3>
+        <div id="firstTable"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   Password gate + decryption
+   ------------------------------------------------------------
+   data.json is written as AES-256-GCM ciphertext (see
+   scripts/fetch_sheet.py) — your actual holdings are never
+   stored in plaintext anywhere in the repo or the published
+   site. The password you type here is used (via PBKDF2) to
+   derive the same AES key the Action used to encrypt the file,
+   and decryption only succeeds if the password matches. Anyone
+   who requests data.json directly only ever sees ciphertext.
+
+   Caveat: this still runs entirely in the browser, so someone
+   could attempt to brute-force the password offline against a
+   downloaded copy of data.json. A long, unique password makes
+   that impractical. For stronger protection you can additionally
+   put the site behind Cloudflare Access.
+   ============================================================ */
+const AUTH_KEY = 'portfolio_dek_v1'; // caches the derived AES key (not the password) for this browser tab
+
+function bytesToBase64(bytes){ return btoa(String.fromCharCode(...bytes)); }
+function base64ToBytes(b64){ return Uint8Array.from(atob(b64), c => c.charCodeAt(0)); }
+
+async function fetchDataFile(){
+  const res = await fetch(DATA_URL + '?_=' + Date.now(), { cache: 'no-store' });
+  if(!res.ok) throw new Error('找不到 data.json');
+  return res.json();
+}
+
+async function deriveKey(password, saltB64, iterations, extractable){
+  const salt = base64ToBytes(saltB64);
+  const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    extractable,
+    ['decrypt']
+  );
+}
+
+async function decryptWithKey(key, json){
+  const iv = base64ToBytes(json.iv);
+  const ciphertext = base64ToBytes(json.ciphertext);
+  const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
+
+function applyPayload(json, payload){
+  holdings = payload.holdings || [];
+  dataUpdatedAt = json.updatedAt || null;
+}
+
+function showApp(){
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appRoot').style.display = '';
+  render();
+}
+
+// Try to unlock using a cached key from this session, without prompting.
+async function attemptUnlockWithCachedKey(){
+  const cached = sessionStorage.getItem(AUTH_KEY);
+  if(!cached) return false;
+  try{
+    const json = await fetchDataFile();
+    if(!json.ciphertext){ holdings = []; dataUpdatedAt = null; showApp(); return true; }
+    const key = await crypto.subtle.importKey('raw', base64ToBytes(cached), 'AES-GCM', false, ['decrypt']);
+    const payload = await decryptWithKey(key, json);
+    applyPayload(json, payload);
+    showApp();
+    return true;
+  }catch(e){
+    sessionStorage.removeItem(AUTH_KEY);
+    return false;
+  }
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pw = document.getElementById('pwInput').value;
+  const errorEl = document.getElementById('loginError');
+  errorEl.textContent = '';
+  try{
+    const json = await fetchDataFile();
+    if(!json.ciphertext){
+      // Placeholder data.json before the first Action run — nothing to protect yet.
+      holdings = []; dataUpdatedAt = null; showApp();
+      return;
+    }
+    const key = await deriveKey(pw, json.salt, json.iterations, true);
+    const payload = await decryptWithKey(key, json);
+    const rawKeyBytes = new Uint8Array(await crypto.subtle.exportKey('raw', key));
+    sessionStorage.setItem(AUTH_KEY, bytesToBase64(rawKeyBytes));
+    applyPayload(json, payload);
+    showApp();
+  }catch(e){
+    errorEl.textContent = '密碼錯誤，請再試一次';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+});
+
+/* ============================================================
+   Data + rendering
+   ============================================================ */
+const DATA_URL = 'data.json';
+
+let holdings = [];
+let dataUpdatedAt = null;
+
+const fmtUSD = (n) => '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
+const fmtPct = (n) => (n>=0?'+':'') + n.toFixed(1) + '%';
+const fmtPctPlain = (n) => n.toFixed(1) + '%';
+const sectorPalette = ['#5B8DEF','#4FAE7C','#E0A458','#C75C4B','#9B7FE0','#4FBAB0','#D1A5E8','#8AA4C4','#E0C458','#7C93A6'];
+
+function isCashRow(h){ return (h.ticker || '').trim().toUpperCase() === 'CASH'; }
+
+/* ---------------- Squarified treemap layout ---------------- */
+function squarify(items, x, y, w, h){
+  const result = [];
+  let remaining = items.slice();
+  let rx = x, ry = y, rw = w, rh = h;
+
+  function rowWorst(row, shortSide){
+    const sum = row.reduce((s,it)=>s+it.area,0);
+    const areas = row.map(it=>it.area);
+    const rmax = Math.max(...areas), rmin = Math.min(...areas);
+    const s2 = sum*sum, l2 = shortSide*shortSide;
+    return Math.max((l2*rmax)/s2, s2/(l2*rmin));
+  }
+
+  while(remaining.length){
+    const layoutAsColumn = rw >= rh; // wide rect -> lay a vertical column filling the full height
+    const shortSide = layoutAsColumn ? rh : rw;
+    let row = [remaining[0]];
+    let rest = remaining.slice(1);
+    let currentWorst = rowWorst(row, shortSide);
+    while(rest.length){
+      const nextRow = row.concat([rest[0]]);
+      const nextWorst = rowWorst(nextRow, shortSide);
+      if(nextWorst <= currentWorst){ row = nextRow; rest = rest.slice(1); currentWorst = nextWorst; }
+      else break;
+    }
+    const rowSum = row.reduce((s,it)=>s+it.area,0);
+    let offset = 0;
+    if(layoutAsColumn){
+      const colWidth = rh > 0 ? rowSum / rh : 0;
+      row.forEach(it=>{
+        const itemHeight = colWidth > 0 ? it.area / colWidth : 0;
+        it.x = rx; it.y = ry + offset; it.w = colWidth; it.h = itemHeight;
+        offset += itemHeight;
+      });
+      rx += colWidth; rw -= colWidth;
+    } else {
+      const rowHeight = rw > 0 ? rowSum / rw : 0;
+      row.forEach(it=>{
+        const itemWidth = rowHeight > 0 ? it.area / rowHeight : 0;
+        it.x = rx + offset; it.y = ry; it.w = itemWidth; it.h = rowHeight;
+        offset += itemWidth;
+      });
+      ry += rowHeight; rh -= rowHeight;
+    }
+    result.push(...row);
+    remaining = rest;
+  }
+  return result;
+}
+
+function renderTreemap(container, items, height, palette){
+  if(!items.length){ container.innerHTML = ''; container.style.height = '0'; return; }
+  const w = container.getBoundingClientRect().width;
+  if(w <= 0) return;
+  const total = items.reduce((s,it)=>s+it.value, 0);
+  const scale = total > 0 ? (w*height)/total : 0;
+  const normalized = items.map((it,i) => ({ ...it, area: it.value*scale, color: palette[i % palette.length] }));
+  const laidOut = squarify(normalized, 0, 0, w, height);
+  container.style.height = height + 'px';
+  container.innerHTML = laidOut.map(it => {
+    const showText = it.w > 44 && it.h > 28;
+    return `<div class="treemap-block" style="left:${it.x.toFixed(1)}px; top:${it.y.toFixed(1)}px; width:${it.w.toFixed(1)}px; height:${it.h.toFixed(1)}px; background:${it.color};" title="${it.label} ${it.sub}">
+      ${showText ? `<div class="tm-label">${it.label}</div><div class="tm-pct">${it.sub}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- Refresh (re-fetch + re-decrypt with the cached key) ---------------- */
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+  document.getElementById('updatedLine').textContent = '讀取中…';
+  const ok = await attemptUnlockWithCachedKey();
+  if(!ok){
+    // cached key missing or no longer valid — ask for the password again
+    document.getElementById('loginOverlay').style.display = '';
+    document.getElementById('appRoot').style.display = 'none';
+    document.getElementById('pwInput').focus();
+  }
+});
+
+/* ---------------- Render ---------------- */
+function render(){
+  const total = holdings.reduce((s,h) => s + h.nowValue, 0);
+
+  document.getElementById('updatedLine').textContent = dataUpdatedAt
+    ? new Date(dataUpdatedAt).toLocaleString('zh-TW') + `（共 ${holdings.length} 筆）`
+    : (holdings.length ? `共 ${holdings.length} 筆` : '尚無資料');
+  document.getElementById('totalValue').textContent = total ? fmtUSD(total) : '$0';
+
+  const totalCostAll = holdings.reduce((s,h) => s + h.totalCost, 0);
+  const totalPl = totalCostAll > 0 ? (total / totalCostAll - 1) * 100 : null;
+  const totalPlEl = document.getElementById('totalPl');
+  if(totalPl === null){ totalPlEl.textContent = ''; totalPlEl.className = 'total-pl'; }
+  else { totalPlEl.textContent = fmtPct(totalPl); totalPlEl.className = 'total-pl ' + (totalPl >= 0 ? 'pl-up' : 'pl-down'); }
+
+  const ibkrTotal = holdings.filter(h=>h.account==='IBKR').reduce((s,h)=>s+h.nowValue,0);
+  const firstTotal = holdings.filter(h=>h.account==='FirstTrade').reduce((s,h)=>s+h.nowValue,0);
+  document.getElementById('ibkrTotalLabel').textContent = fmtUSD(ibkrTotal);
+  document.getElementById('firstTotalLabel').textContent = fmtUSD(firstTotal);
+  let splitHtml = '';
+  if(total){
+    splitHtml += `<span><span class="dot" style="background:var(--ibkr)"></span>IBKR ${fmtPctPlain(ibkrTotal/total*100)}</span>`;
+    splitHtml += `<span><span class="dot" style="background:var(--first)"></span>FirstTrade ${fmtPctPlain(firstTotal/total*100)}</span>`;
+  }
+  document.getElementById('splitRow').innerHTML = splitHtml;
+
+  const isMobile = window.innerWidth < 640;
+
+  // cash summary (top of section 1)
+  const cashTotal = holdings.filter(isCashRow).reduce((s,h) => s + h.nowValue, 0);
+  const cashPct = total ? (cashTotal/total*100) : 0;
+  document.getElementById('cashSummary').innerHTML = holdings.length ? `
+    <div class="cash-summary">
+      <div class="cash-label">現金部位</div>
+      <div class="cash-figures">
+        <span class="cash-amount">${fmtUSD(cashTotal)}</span>
+        <span>${fmtPctPlain(cashPct)}</span>
+      </div>
+    </div>
+  ` : '';
+
+  // combined top 16 (cash excluded)
+  const combinedMap = {};
+  holdings.forEach(h => { if(isCashRow(h)) return; combinedMap[h.ticker] = (combinedMap[h.ticker]||0) + h.nowValue; });
+  const combined = Object.entries(combinedMap)
+    .map(([ticker,value]) => ({ticker, value}))
+    .sort((a,b) => b.value - a.value)
+    .slice(0,16);
+  const combinedList = document.getElementById('combinedList');
+  if(combined.length){
+    const items = combined.map(c => ({ label: c.ticker, value: c.value, sub: fmtPctPlain(c.value/total*100) }));
+    combinedList.innerHTML = '<div class="treemap" id="combinedTreemap"></div>';
+    renderTreemap(document.getElementById('combinedTreemap'), items, isMobile ? 320 : 420, sectorPalette);
+  } else {
+    combinedList.innerHTML = '<div class="empty-state">尚無持倉資料</div>';
+  }
+
+  // sector allocation (cash excluded, top 7)
+  const sectorMap = {};
+  holdings.forEach(h => { if(isCashRow(h)) return; sectorMap[h.sector] = (sectorMap[h.sector]||0) + h.nowValue; });
+  const sectors = Object.entries(sectorMap)
+    .map(([sector,value]) => ({sector, value}))
+    .sort((a,b)=>b.value-a.value)
+    .slice(0,7);
+  const sectorTotal = sectors.reduce((s,x)=>s+x.value, 0);
+  const sectorList = document.getElementById('sectorList');
+  if(sectors.length){
+    const items = sectors.map(s => ({ label: s.sector, value: s.value, sub: fmtPctPlain(s.value/sectorTotal*100) }));
+    sectorList.innerHTML = '<div class="treemap" id="sectorTreemap"></div>';
+    renderTreemap(document.getElementById('sectorTreemap'), items, isMobile ? 200 : 240, sectorPalette);
+  } else {
+    sectorList.innerHTML = '<div class="empty-state">尚無持倉資料</div>';
+  }
+
+  // account tables (cash separated out)
+  function renderAccountTable(accName, elId){
+    const rows = holdings.filter(h=>h.account===accName && !isCashRow(h)).sort((a,b)=>b.nowValue-a.nowValue).slice(0,10);
+    const accTotal = holdings.filter(h=>h.account===accName).reduce((s,h)=>s+h.nowValue,0);
+    const accCash = holdings.filter(h=>h.account===accName && isCashRow(h)).reduce((s,h)=>s+h.nowValue,0);
+    const el = document.getElementById(elId);
+    const cashHtml = accCash > 0 ? `
+      <div class="cash-summary acc-cash">
+        <div class="cash-label">現金</div>
+        <div class="cash-figures">
+          <span class="cash-amount">${fmtUSD(accCash)}</span>
+          <span>${fmtPctPlain(accTotal ? accCash/accTotal*100 : 0)}</span>
+        </div>
+      </div>` : '';
+    if(!rows.length){ el.innerHTML = cashHtml + '<div class="empty-state">此帳戶尚無股票持倉</div>'; return; }
+    el.innerHTML = cashHtml + `
+      <table class="acc-table">
+        <thead><tr><th>代號</th><th class="num">市值</th><th class="num">佔比</th><th class="num">損益</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>{
+            const plPct = r.totalCost > 0 ? (r.nowValue / r.totalCost - 1) * 100 : null;
+            const plCls = plPct === null ? '' : (plPct >= 0 ? 'pl-up' : 'pl-down');
+            const plText = plPct === null ? '—' : fmtPct(plPct);
+            return `
+            <tr>
+              <td class="tk">${r.ticker}</td>
+              <td class="num">${fmtUSD(r.nowValue)}</td>
+              <td class="num">${fmtPctPlain(r.nowValue/accTotal*100)}</td>
+              <td class="num ${plCls}">${plText}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+  renderAccountTable('IBKR', 'ibkrTable');
+  renderAccountTable('FirstTrade', 'firstTable');
+}
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(render, 150);
+});
+
+/* ---------------- Init ---------------- */
+(async function init(){
+  const ok = await attemptUnlockWithCachedKey();
+  if(!ok){
+    document.getElementById('pwInput').focus();
+  }
+})();
+</script>
+</body>
+</html>
